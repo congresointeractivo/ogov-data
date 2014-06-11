@@ -72,8 +72,8 @@ def save bill
     # abort
     puts "Checking if bill exists. Server responded code: " + req.code.to_s
 		if req.code == 200
-			puts "Updating bill."
-			put bill
+			puts "Bill already exists. No action taken."
+			#put bill
 		else
 			puts "Creating new bill."
 			post bill
@@ -94,7 +94,7 @@ end
 startbill = 0;
 
 if (ARGV[0]) then
-	startbill = ARGV[0]
+	startbill = ARGV[0].to_i
 end
 
 
