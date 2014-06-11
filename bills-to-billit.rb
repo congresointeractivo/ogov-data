@@ -91,12 +91,26 @@ def post bill
 end
 
 
+startbill = 0;
+
+if (ARGV[0]) then
+	startbill = ARGV[0]
+end
+
+
+billcount = 0
+
 allbills = Dir["bills/*/*/*"].select { |billfile|
+	if (startbill > billcount) then
+		next;
+	end
 	p billfile;
 	jsontext = File.read(billfile)
 	jsonbill = JSON.parse(jsontext)
 	bill = newbillit(jsonbill);
 	p bill;
 	save bill;
+	billcount = billcount + 1;
+	p billcount
 }
 
