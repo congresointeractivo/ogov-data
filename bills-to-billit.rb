@@ -6,7 +6,7 @@ require 'billit_representers/models/bill'
 def newbillit ogovBill
 	bill = Billit::Bill.new
 
-	p ogovBill
+	#p ogovBill
 
 
 	billitAuthors = [];
@@ -102,13 +102,14 @@ billcount = 0
 
 allbills = Dir["bills/*/*/*"].select { |billfile|
 	if (startbill > billcount) then
+		billcount = billcount + 1;
 		next;
 	end
 	p billfile;
 	jsontext = File.read(billfile)
 	jsonbill = JSON.parse(jsontext)
 	bill = newbillit(jsonbill);
-	p bill;
+	#p bill;
 	save bill;
 	billcount = billcount + 1;
 	p billcount
