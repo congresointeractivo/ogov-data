@@ -62,21 +62,21 @@ def newbillit ogovBill
 	return bill;
 end
 
-def save bill
+def check bill
 	@model =  'bills'
-    @API_url = 'http://billit.congresointeractivo.org'
+    @API_url = 'http://billit'
 	@format = 'application/json'
 
-    req = HTTParty.get([@API_url, @model, bill.uid].join("/"), headers: {"Accept"=>"*/*"});
+    req = HTTParty.get([@API_url, @model, bill].join("/"), headers: {"Accept"=>"*/*"});
     # p req 
     # abort
     puts "Checking if bill exists. Server responded code: " + req.code.to_s
 		if req.code == 200
-			puts "Bill already exists. No action taken."
+			return true
 			#put bill
 		else
-			puts "Creating new bill."
-			post bill
+			return false
+			
 		end
 end
 
@@ -105,12 +105,21 @@ allbills = Dir["bills/*/*/*"].select { |billfile|
 		billcount = billcount + 1;
 		next;
 	end
-	p billfile;
-	jsontext = File.read(billfile)
-	jsonbill = JSON.parse(jsontext)
-	bill = newbillit(jsonbill);
-	#p bill;
-	save bill;
+	p billfile; # "bills/39/17/3917-D-2006"
+
+	billid = billfile.split(/\//)[-1]
+
+        if check billid
+           puts "Bill already exists. No action taken."
+           #put bill
+        else
+          puts "Creating new bill."
+	  jsontext = File.read(billfile)
+	  jsonbill = JSON.parse(jsontext)
+ 	  bill = newbillit(jsonbill);
+ 	  #p bill;
+  	  post bill;
+        end
 	billcount = billcount + 1;
 	p billcount
 }
