@@ -63,10 +63,6 @@ def newbillit ogovBill
 end
 
 def check bill
-	@model =  'bills'
-    @API_url = 'http://billit'
-	@format = 'application/json'
-
     req = HTTParty.get([@API_url, @model, bill].join("/"), headers: {"Accept"=>"*/*"});
     # p req 
     # abort
@@ -100,6 +96,12 @@ end
 
 billcount = 0
 
+
+@model =  'bills'
+@API_url = 'http://billit'
+@format = 'application/json'
+
+
 allbills = Dir["bills/*/*/*"].select { |billfile|
 	if (startbill > billcount) then
 		billcount = billcount + 1;
@@ -109,18 +111,19 @@ allbills = Dir["bills/*/*/*"].select { |billfile|
 
 	billid = billfile.split(/\//)[-1]
 
-        if check billid
-           puts "Bill already exists. No action taken."
+        #if check billid
+        #   puts "Bill already exists. No action taken."
            #put bill
-        else
+        #else
           puts "Creating new bill."
 	  jsontext = File.read(billfile)
 	  jsonbill = JSON.parse(jsontext)
  	  bill = newbillit(jsonbill);
  	  #p bill;
   	  post bill;
-        end
+        #end
 	billcount = billcount + 1;
+        #if (billcount > 30) then abort end
 	p billcount
 }
 
