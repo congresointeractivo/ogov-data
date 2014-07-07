@@ -1,6 +1,5 @@
 var file =require("file");
 var fs = require('fs');
-var moment = require('moment');
 
 var walki=0;
 var folderBills = [];

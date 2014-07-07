@@ -16,6 +16,15 @@ These datasets will be updated the first Sunday of the month.
 
 Last update: 2014-06-14 11:45am
 
+## Converto to popolo standard
+
+Requires: nodejs
+
+1) Install nodejs and libraries: fs and file: apt-get install nodejs || npm install fs file
+2) Create pbills dir: mkdir pbills
+3) Create files with 1000 projects each: nodejs to-popolo.js
+4) Import to mongodb: find pbills/ -type f -print0 | xargs -0 -I filename mongoimport --type json --collection bills -db [db_name] --jsonArray --file filename
+
 ## Datasets
 
 bills:
