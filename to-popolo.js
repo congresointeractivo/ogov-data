@@ -16,7 +16,7 @@ function billsindir(nothing,dirPath,dirs,files) {
     json = JSON.parse(fs.readFileSync(files[f],"utf8"));
     folderBills.push(toPopolo(json));
   }
-  console.log(dirPath,fileName);
+  //console.log(dirPath,fileName);
   if (folderBills.length > 1000) {
     var fileName = "pbills/mongo"+walki+".json";
     fs.writeFileSync(fileName, JSON.stringify(folderBills).replace("}","}\n"));
@@ -54,13 +54,15 @@ var toPopolo = function(ogovBill) {
 
   var billitDirectives = [];
   for (p in ogovBill.procedures) {
-    var procedure = ogovBill.procedures[p];
+    var procedure = [p];
 
     var billitDirective = {};
     billitDirective.date = { "$date": new Date(procedure["date"]).getTime() };
-    billitDirective.step = "Votación";
+    billitDirective.step = procedure["topic"];
     billitDirective.stage = procedure["result"];
     billitDirective.link = "";
+    billitDirective.bill_uid = procedure["file"]
+    billitDirective.source = procedure["source"]
 
     billitDirectives.push(billitDirective);
   } 
@@ -69,17 +71,18 @@ var toPopolo = function(ogovBill) {
   var billitBill = {
     "uid": ogovBill.file,
     "short_uid": ogovBill.file.split("-")[0],
-    "title": capitaliseFirstLetter(ogovBill.summary),
+    "title": ogovBill.summary,
     "creation_date": { "$date": new Date(ogovBill.creationTime).getTime() },
     "source": ogovBill.source,
     "initial_chamber": ogovBill.source, //This we have to find out more, becase it cannot be "PE"
-    "bill_draft_link":"http://www1.hcdn.gov.ar/proyxml/expediente.asp?fundamentos=si&numexp="+ogovBill.file,
+    "bill_draft_link": ogovBill.textUrl,
     "subject_areas": ogovBill.committees,
     "authors": billitAuthors,
     "paperworks": billitPaperworks,
     "directives": billitDirectives,
+    "lawNumber": ogovBill.lawNumber,
     "stage": "Ingresado",
-    "project_type": capitaliseFirstLetter(ogovBill.type.replace("PROYECTO DE ","")),
+    "project_type": ogovBill.type.replace("PROYECTO DE ",""),
 
     "current_priority": "Normal",
 
@@ -90,34 +93,58 @@ var toPopolo = function(ogovBill) {
     "remarks":[],
     "revisions":[],
   }
+
+
+
+
+
+
+
+  // Si existe, se considera "Ingresado"
+
+  //Si tiene un dictámen, considero que el estado es "Con dictámen en Cámara de Orígen"
   if (billitBill.paperworks.length > 0) {
     billitBill.stage = "Con dictámen en Cámara de Orígen";
+    //Si tiene dos dictámenes, considero que el estado es "Con dictámen en Cámara Revisora"
+    //Todavía no encontré un ejemplo en el que esto no sea cierto, pero creo que debe haber y que esto está mal.
     if (billitBill.paperworks.length > 1) {
       billitBill.stage = "Con dictámen en Cámara Revisora";
     }
   }
+
+  //Si tiene un trámite cuyo estado es APROBADO, entonces lo considero "Con media sanción" 
+  //si es una ley, o Aprobado si es un proyecto de declaración, resolución o mensaje.
   if (billitBill.directives.length > 0) {
-    //console.log(billitBill.directives[0]);
-    if (billitBill.directives[0].result == "APROBADO") {
-      billitBill.stage = "Con media sanción";
+    if (billitBill.directives[0].stage == "APROBADO") {
+      if (billitBill.project_type == "LEY") {
+        billitBill.stage = "Con media sanción";
+      }
+      else {
+        billitBill.stage = "Aprobado o sancionado";        
+      }
     }
+    // Si en el primer trámite, el estado NO ES APROBADO, entonces lo considero "Rechazado"
     else {
+      console.log(billitBill.project_type,ogovBill.procedures);
       billitBill.stage = "Rechazado";
     }
+    //Si tiene más de un trámite y el resultado del segundo trámite es SANCIONADO, lo considero Sancionado.
     if (billitBill.directives.length > 1) {
-      if (billitBill.directives[1].result == "APROBADO") {
-        billitBill.stage = "Sanción definitiva (ley)";
+      if (billitBill.directives[1].result == "SANCIONADO") {
+        billitBill.stage = "Aprobado o sancionado";
       }
+      //Si el resultado del segundo trámite NO ES SANCIONADO lo considero "Rechazado".
       else {
         billitBill.stage = "Rechazado";
       }
     }
   }
+
+
+  // Si tiene número de ley es porque está aprobada
+  if (billitBill.lawNumber) {
+        billitBill.stage = "Aprobado o sancionado";    
+  }
   return billitBill;
 }
 
-
-function capitaliseFirstLetter(string) {
-    if(!string) { return 'null' }
-    return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
-}
